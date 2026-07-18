@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Webhook Observability</title>
+  <!-- Google Fonts Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-surface: rgba(17, 24, 39, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      
+      --color-primary: #6366f1;
+      --color-primary-glow: rgba(99, 102, 241, 0.15);
+      
+      --color-success: #10b981;
+      --color-success-glow: rgba(16, 185, 129, 0.12);
+      
+      --color-danger: #ef4444;
+      --color-danger-glow: rgba(239, 68, 68, 0.12);
+      
+      --color-warning: #f59e0b;
+      --color-warning-glow: rgba(245, 158, 11, 0.12);
+
+      --color-info: #0ea5e9;
+      --color-info-glow: rgba(14, 165, 233, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+    }
+
+    header {
+      max-width: 1200px;
+      margin: 0 auto 2.5rem auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+    }
+
+    .brand h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .refresh-badge {
+      background-color: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      color: #818cf8;
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .refresh-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #818cf8;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    /* Grid for Metrics Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .glass-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .metric-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-card .title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .metric-card .value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin: 0.75rem 0 0.25rem 0;
+    }
+
+    .metric-card .subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Dynamic Border colors for specific cards */
+    .card-success { border-left: 4px solid var(--color-success); }
+    .card-primary { border-left: 4px solid var(--color-primary); }
+    .card-info { border-left: 4px solid var(--color-info); }
+    .card-warning { border-left: 4px solid var(--color-warning); }
+
+    /* Middle section layouts */
+    .dashboard-split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 900px) {
+      .dashboard-split {
+        grid-template-columns: 1fr 2fr;
+      }
+    }
+
+    .card-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-header-flex h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Progress Bar list */
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .status-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .status-name {
+      text-transform: capitalize;
+      font-weight: 500;
+    }
+
+    .status-bar-bg {
+      height: 8px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .status-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    /* Dynamic fills */
+    .fill-delivered { background-color: var(--color-success); box-shadow: 0 0 10px var(--color-success-glow); }
+    .fill-pending { background-color: var(--color-info); box-shadow: 0 0 10px var(--color-info-glow); }
+    .fill-sending { background-color: var(--color-primary); box-shadow: 0 0 10px var(--color-primary-glow); }
+    .fill-failed { background-color: var(--color-warning); box-shadow: 0 0 10px var(--color-warning-glow); }
+    .fill-dlq { background-color: var(--color-danger); box-shadow: 0 0 10px var(--color-danger-glow); }
+
+    /* Circuits panel */
+    .circuit-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .circuit-item {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .circuit-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .circuit-url {
+      font-family: monospace;
+      font-size: 0.85rem;
+      word-break: break-all;
+    }
+
+    .circuit-failures {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .badge-tripped {
+      background-color: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 1.5rem 0;
+    }
+
+    /* DLQ Panel Table */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .dlq-payload-cell {
+      max-width: 250px;
+    }
+
+    .dlq-payload {
+      font-family: monospace;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      display: inline-block;
+    }
+
+    .dlq-error {
+      color: #f87171;
+      font-size: 0.8rem;
+    }
+
+    /* Redrive Button styling */
+    .btn-redrive {
+      background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%);
+      border: none;
+      color: white;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-redrive:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(79, 70, 229, 0.4);
+      background: linear-gradient(135deg, #9099f9 0%, #5a51e6 100%);
+    }
+
+    .btn-redrive:active {
+      transform: translateY(1px);
+    }
+
+    .btn-redrive:disabled {
+      background: #374151;
+      box-shadow: none;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <h1>HERMES</h1>
+      <p>Webhook Reliability Engineering Panel</p>
+    </div>
+    <div class="refresh-badge">
+      <div class="refresh-dot"></div>
+      Live metrics active
+    </div>
+  </header>
+
+  <main>
+    <!-- Top metrics grid -->
+    <div class="metrics-grid">
+      <div class="glass-card metric-card card-primary">
+        <span class="title">Total Events</span>
+        <span class="value" id="val-total">0</span>
+        <span class="subtitle">API triggers registered</span>
+      </div>
+      <div class="glass-card metric-card card-success">
+        <span class="title">Success Rate</span>
+        <span class="value" id="val-success-rate">0.0%</span>
+        <span class="subtitle">Delivered webhook ratio</span>
+      </div>
+      <div class="glass-card metric-card card-info">
+        <span class="title">P50 Latency</span>
+        <span class="value" id="val-p50">0 ms</span>
+        <span class="subtitle">Median execution duration</span>
+      </div>
+      <div class="glass-card metric-card card-warning">
+        <span class="title">P99 Latency</span>
+        <span class="value" id="val-p99">0 ms</span>
+        <span class="subtitle">99th percentile spike time</span>
+      </div>
+    </div>
+
+    <!-- Middle section split layout -->
+    <div class="dashboard-split">
+      
+      <!-- Left side: Status breakdown & active circuits -->
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Status counts -->
+        <div class="glass-card">
+          <div class="card-header-flex">
+            <h2>Delivery Statuses</h2>
+          </div>
+          <div class="status-list" id="status-bars-container">
+            <!-- Populated via Javascript -->
+          </div>
+        </div>
+
+        <!-- Circuit Breakers -->
+        <div class="glass-card">
+          <div class="card-header-flex">
+            <h2>Circuit Status</h2>
+          </div>
+          <div class="circuit-grid" id="circuit-container">
+            <!-- Populated via Javascript -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right side: Dead letter queue manager -->
+      <div class="glass-card">
+        <div class="card-header-flex">
+          <h2>Dead Letter Queue (DLQ)</h2>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Event Details</th>
+                <th>Destination Endpoint</th>
+                <th>Retries</th>
+                <th>Last Failure Cause</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="dlq-table-body">
+              <!-- Populated via Javascript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const API_URL = '/api/metrics';
+
+    async function fetchMetrics() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        updateUI(data);
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      }
+    }
+
+    function updateUI(data) {
+      // 1. Text Metrics
+      document.getElementById('val-total').textContent = data.totalEvents;
+      document.getElementById('val-success-rate').textContent = `${data.successRate}%`;
+      document.getElementById('val-p50').textContent = `${data.latencies.p50} ms`;
+      document.getElementById('val-p99').textContent = `${data.latencies.p99} ms`;
+
+      // 2. Status Bars
+      const statusContainer = document.getElementById('status-bars-container');
+      const maxCount = Math.max(...Object.values(data.statusCounts), 1);
+      
+      let statusHTML = '';
+      const order = ['delivered', 'pending', 'sending', 'failed', 'dlq'];
+      order.forEach(status => {
+        const count = data.statusCounts[status] || 0;
+        const percentage = ((count / maxCount) * 100).toFixed(0);
+        statusHTML += `
+          <div class="status-item">
+            <div class="status-info">
+              <span class="status-name">${status}</span>
+              <span class="status-count">${count}</span>
+            </div>
+            <div class="status-bar-bg">
+              <div class="status-bar-fill fill-${status}" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      statusContainer.innerHTML = statusHTML;
+
+      // 3. Circuit Breakers
+      const circuitContainer = document.getElementById('circuit-container');
+      if (data.activeCircuitBreakers.length === 0) {
+        circuitContainer.innerHTML = '<div class="empty-state">All endpoints healthy (Circuits CLOSED)</div>';
+      } else {
+        let circuitHTML = '';
+        data.activeCircuitBreakers.forEach(cb => {
+          const cooldownDate = new Date(cb.cooldown_until);
+          const timeRemaining = Math.max(0, Math.floor((cooldownDate.getTime() - Date.now()) / 1000));
+          circuitHTML += `
+            <div class="circuit-item">
+              <div class="circuit-details">
+                <span class="circuit-url">${cb.url}</span>
+                <span class="circuit-failures">Consecutive Fails: ${cb.consecutive_failures} • Cooldown: ${timeRemaining}s remaining</span>
+              </div>
+              <span class="badge-tripped">TRIPPED</span>
+            </div>
+          `;
+        });
+        circuitContainer.innerHTML = circuitHTML;
+      }
+
+      // 4. DLQ Table
+      const dlqBody = document.getElementById('dlq-table-body');
+      if (data.dlqEvents.length === 0) {
+        dlqBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-state" style="text-align: center;">DLQ is empty! No failed events.</td>
+          </tr>
+        `;
+      } else {
+        let dlqHTML = '';
+        data.dlqEvents.forEach(event => {
+          const payloadStr = JSON.stringify(event.payload);
+          const dateStr = new Date(event.created_at).toLocaleTimeString();
+          dlqHTML += `
+            <tr>
+              <td>
+                <div style="font-weight: 600; font-size: 0.85rem;">${event.event_type}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin: 0.15rem 0;">${event.id}</div>
+                <div class="dlq-payload-cell"><span class="dlq-payload" title='${payloadStr}'>${payloadStr}</span></div>
+              </td>
+              <td>
+                <div class="circuit-url">${event.url || 'Unknown Endpoint'}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Timestamp: ${dateStr}</div>
+              </td>
+              <td style="font-weight: 500;">
+                ${event.attempts_count} / 5
+              </td>
+              <td>
+                <div class="dlq-error">${event.error_message || 'HTTP status ' + event.response_status}</div>
+              </td>
+              <td style="text-align: right;">
+                <button class="btn-redrive" onclick="redriveEvent('${event.id}', this)">
+                  Re-drive
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+        dlqBody.innerHTML = dlqHTML;
+      }
+    }
+
+    async function redriveEvent(eventId, btnElement) {
+      btnElement.disabled = true;
+      btnElement.innerHTML = '<span class="spinner"></span> Rescheduling...';
+
+      try {
+        const response = await fetch(`/api/redrive/${eventId}`, {
+          method: 'POST'
+        });
+        
+        if (response.ok) {
+          // Instantly poll metrics again
+          await fetchMetrics();
+        } else {
+          const err = await response.json();
+          alert(`Redrive failed: ${err.error}`);
+          btnElement.disabled = false;
+          btnElement.textContent = 'Re-drive';
+        }
+      } catch (error) {
+        console.error('Error during redrive request:', error);
+        btnElement.disabled = false;
+        btnElement.textContent = 'Re-drive';
+      }
+    }
+
+    // Polling setup
+    fetchMetrics();
+    setInterval(fetchMetrics, 2000); // refresh every 2 seconds
+  </script>
+</body>
+</html>

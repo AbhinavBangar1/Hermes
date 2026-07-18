@@ -1,0 +1,24 @@
+{
+  "name": "hermes-webhook-system",
+  "version": "1.0.0",
+  "description": "Production-grade fault-tolerant webhook delivery system",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "db:init": "node src/scripts/initDb.js",
+    "producer": "node src/services/producer.js",
+    "worker": "node src/services/worker.js",
+    "scheduler": "node src/services/scheduler.js",
+    "mock": "node src/services/mockMerchant.js",
+    "dashboard": "node src/services/dashboard.js",
+    "dev": "concurrently --kill-others \"npm run producer\" \"npm run worker\" \"npm run scheduler\" \"npm run mock\" \"npm run dashboard\""
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "redis": "^4.6.14"
+  }
+}

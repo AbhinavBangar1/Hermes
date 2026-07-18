@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="660" viewBox="0 0 960 660" fill="none">
+  <style>
+    .bg { fill: #1d1d1d; }
+    .node-rect { fill: #282828; stroke: #707070; stroke-width: 1; rx: 3; ry: 3; }
+    .worker-pool-rect { fill: none; stroke: #707070; stroke-width: 1; stroke-dasharray: 4 4; rx: 3; ry: 3; }
+    .text-node { font-family: "trebuchet ms", verdana, arial, sans-serif; font-size: 13px; fill: #eaeaea; font-weight: normal; }
+    .text-bold { font-family: "trebuchet ms", verdana, arial, sans-serif; font-size: 13px; fill: #ffffff; font-weight: bold; }
+    .arrow-path { stroke: #8c8c8c; stroke-width: 1.2; fill: none; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="660" class="bg" />
+
+  <defs>
+    <!-- Arrow Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#3b82f6" />
+    </marker>
+  </defs>
+
+  <!-- ==================== CONNECTIONS (LINES & ARROWS) ==================== -->
+  
+  <!-- Producer to Transaction -->
+  <path d="M 165 285 L 165 330" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Transaction to PostgreSQL -->
+  <path d="M 165 360 L 165 395" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Worker 1 to Log Attempt & Update Event Status -->
+  <path d="M 410 285 L 410 345 L 390 345" class="arrow-path" marker-end="url(#arrow)" />
+  
+  <!-- Log Attempt & Update Event Status to PostgreSQL (Routed to avoid Transaction box) -->
+  <path d="M 300 360 L 300 380 L 200 380 L 200 405" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- PostgreSQL to Outbox Table -->
+  <path d="M 165 452 L 165 490" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Outbox Table to Outbox Publisher -->
+  <path d="M 165 520 L 165 570" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Outbox Publisher to Publish -->
+  <path d="M 100 592 L 55 592 L 55 530" class="arrow-path" />
+
+  <!-- Publish to Redis Stream -->
+  <path d="M 55 500 L 55 60 L 490 60" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Redis Stream to Consumer Group 1 -->
+  <path d="M 540 80 L 540 105 L 465 105 L 465 130" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Redis Stream to Consumer Group 2 -->
+  <path d="M 620 80 L 620 130" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Redis Stream to Consumer Group 3 -->
+  <path d="M 700 80 L 700 105 L 775 105 L 775 130" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Consumer Group 1 to Worker 1 -->
+  <path d="M 465 160 L 465 200 L 440 200 L 440 240" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Consumer Group 2 to Worker 2 -->
+  <path d="M 620 160 L 620 240" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Consumer Group 3 to Worker N -->
+  <path d="M 775 160 L 775 240" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Worker 1 to POST Payload -->
+  <path d="M 440 285 L 440 330 L 450 330 L 450 380" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- POST Payload to Mock Merchant Server -->
+  <path d="M 450 410 L 450 470" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Worker 1 to On Failure: Add Delay -->
+  <path d="M 470 285 L 470 330 L 660 330 L 660 360" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- On Failure: Add Delay to Redis ZSet -->
+  <path d="M 660 390 L 660 450" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Redis ZSet to Schedule Expired Tasks -->
+  <path d="M 660 495 L 660 540" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Schedule Expired Tasks to Outbox Publisher -->
+  <path d="M 660 570 L 660 610 L 230 610" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- Worker 1 to XACK -->
+  <path d="M 490 285 L 490 315 L 865 315 L 865 160" class="arrow-path" marker-end="url(#arrow)" />
+
+  <!-- XACK to Redis Stream -->
+  <path d="M 865 130 L 865 60 L 750 60" class="arrow-path" marker-end="url(#arrow)" />
+
+
+  <!-- ==================== NODES (RECTANGLES & CYLINDERS) ==================== -->
+
+  <!-- Redis Stream: webhook_deliveries -->
+  <rect x="490" y="40" width="260" height="40" class="node-rect" />
+  <text x="620" y="65" class="text-bold" text-anchor="middle">Redis Stream: webhook_deliveries</text>
+
+  <!-- Consumer Group 1 -->
+  <rect x="410" y="130" width="110" height="30" class="node-rect" />
+  <text x="465" y="149" class="text-node" text-anchor="middle">Consumer Group</text>
+
+  <!-- Consumer Group 2 -->
+  <rect x="565" y="130" width="110" height="30" class="node-rect" />
+  <text x="620" y="149" class="text-node" text-anchor="middle">Consumer Group</text>
+
+  <!-- Consumer Group 3 -->
+  <rect x="720" y="130" width="110" height="30" class="node-rect" />
+  <text x="775" y="149" class="text-node" text-anchor="middle">Consumer Group</text>
+
+  <!-- Worker Pool Container (Subgraph) -->
+  <rect x="350" y="190" width="520" height="120" class="worker-pool-rect" />
+  <text x="360" y="210" class="text-bold" fill="#8c8c8c">Worker Pool</text>
+
+  <!-- Delivery Worker 1 -->
+  <rect x="370" y="240" width="140" height="45" class="node-rect" />
+  <text x="440" y="267" class="text-bold" text-anchor="middle">Delivery Worker 1</text>
+
+  <!-- Delivery Worker 2 -->
+  <rect x="540" y="240" width="140" height="45" class="node-rect" />
+  <text x="610" y="267" class="text-bold" text-anchor="middle">Delivery Worker 2</text>
+
+  <!-- Delivery Worker N -->
+  <rect x="710" y="240" width="140" height="45" class="node-rect" />
+  <text x="780" y="267" class="text-bold" text-anchor="middle">Delivery Worker N</text>
+
+  <!-- Merchant API / Event Producer -->
+  <rect x="50" y="240" width="230" height="45" class="node-rect" />
+  <text x="165" y="267" class="text-bold" text-anchor="middle">Merchant API / Event Producer</text>
+
+  <!-- Transaction -->
+  <rect x="125" y="330" width="80" height="30" class="node-rect" />
+  <text x="165" y="349" class="text-node" text-anchor="middle">Transaction</text>
+
+  <!-- Log Attempt & Update Event Status -->
+  <rect x="210" y="330" width="180" height="30" class="node-rect" />
+  <text x="300" y="349" class="text-node" text-anchor="middle">Log Attempt &amp; Update Status</text>
+
+  <!-- PostgreSQL Cylinder -->
+  <path d="M 120 405 L 120 445 A 45 10 0 0 0 210 445 L 210 405 Z" fill="#282828" stroke="#707070" stroke-width="1" />
+  <ellipse cx="165" cy="405" rx="45" ry="10" fill="#282828" stroke="#707070" stroke-width="1" />
+  <text x="165" y="433" class="text-bold" text-anchor="middle">PostgreSQL</text>
+
+  <!-- Outbox Table -->
+  <rect x="120" y="490" width="90" height="30" class="node-rect" />
+  <text x="165" y="509" class="text-node" text-anchor="middle">Outbox Table</text>
+
+  <!-- Outbox Publisher -->
+  <rect x="100" y="570" width="130" height="45" class="node-rect" />
+  <text x="165" y="597" class="text-bold" text-anchor="middle">Outbox Publisher</text>
+
+  <!-- Publish -->
+  <rect x="25" y="500" width="60" height="30" class="node-rect" />
+  <text x="55" y="519" class="text-node" text-anchor="middle">Publish</text>
+
+  <!-- POST Payload -->
+  <rect x="400" y="380" width="100" height="30" class="node-rect" />
+  <text x="450" y="399" class="text-node" text-anchor="middle">POST Payload</text>
+
+  <!-- Mock Merchant Server -->
+  <rect x="360" y="470" width="180" height="45" class="node-rect" />
+  <text x="450" y="497" class="text-bold" text-anchor="middle">Mock Merchant Server</text>
+
+  <!-- On Failure: Add Delay -->
+  <rect x="590" y="360" width="140" height="30" class="node-rect" />
+  <text x="660" y="379" class="text-node" text-anchor="middle">On Failure: Add Delay</text>
+
+  <!-- Redis ZSet: webhook_delays -->
+  <rect x="550" y="450" width="220" height="45" class="node-rect" />
+  <text x="660" y="477" class="text-bold" text-anchor="middle">Redis ZSet: webhook_delays</text>
+
+  <!-- Schedule Expired Tasks -->
+  <rect x="590" y="540" width="140" height="30" class="node-rect" />
+  <text x="660" y="559" class="text-node" text-anchor="middle">Schedule Expired Tasks</text>
+
+  <!-- XACK -->
+  <rect x="840" y="130" width="50" height="30" class="node-rect" />
+  <text x="865" y="149" class="text-node" text-anchor="middle">XACK</text>
+
+</svg>
