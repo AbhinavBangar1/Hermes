@@ -23,7 +23,7 @@ const run = async () => {
     await client.query(`CREATE TYPE circuit_state AS ENUM ('CLOSED', 'OPEN', 'HALF-OPEN');`);
     await client.query(`CREATE TYPE event_status AS ENUM ('pending', 'sending', 'delivered', 'failed', 'dlq');`);
 
-    // 1. Create Merchants Table
+
     await client.query(`
       CREATE TABLE merchants (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -34,7 +34,7 @@ const run = async () => {
     `);
     console.log('- Created table: merchants');
 
-    // 2. Create Webhook Endpoints Table
+
     await client.query(`
       CREATE TABLE webhook_endpoints (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,7 +49,7 @@ const run = async () => {
     `);
     console.log('- Created table: webhook_endpoints');
 
-    // 3. Create Events Table
+
     await client.query(`
       CREATE TABLE events (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,7 +61,7 @@ const run = async () => {
     `);
     console.log('- Created table: events');
 
-    // 4. Create Outbox Tasks Table
+
     await client.query(`
       CREATE TABLE outbox_tasks (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,7 +74,7 @@ const run = async () => {
     `);
     console.log('- Created table: outbox_tasks');
 
-    // 5. Create Delivery Attempts Table
+
     await client.query(`
       CREATE TABLE delivery_attempts (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

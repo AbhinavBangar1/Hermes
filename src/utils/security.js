@@ -3,7 +3,7 @@ import dns from 'dns/promises';
 import { URL } from 'url';
 
 /**
- * Generates an HMAC-SHA256 signature for Stripe-like webhook verification.
+ * Generates an HMAC-SHA256 signature for webhook verification.
  * Format: t=timestamp,v1=signature
  * @param {object|string} payload - JSON payload or raw string
  * @param {string} secret - Per-merchant signing secret

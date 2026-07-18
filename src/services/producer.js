@@ -57,7 +57,6 @@ app.post('/endpoints', async (req, res) => {
   }
 });
 
-// Produce Webhook Event (Transactional Outbox Pattern)
 app.post('/events', async (req, res) => {
   const { merchant_id, event_type, payload } = req.body;
   if (!merchant_id || !event_type || !payload) {
@@ -68,7 +67,6 @@ app.post('/events', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Insert Event into the events table
     const eventQuery = `
       INSERT INTO events (merchant_id, event_type, payload)
       VALUES ($1, $2, $3)
@@ -77,14 +75,12 @@ app.post('/events', async (req, res) => {
     const eventRes = await client.query(eventQuery, [merchant_id, event_type, JSON.stringify(payload)]);
     const event = eventRes.rows[0];
 
-    // 2. Fetch all active endpoints for this merchant
     const endpointsRes = await client.query(
       'SELECT id FROM webhook_endpoints WHERE merchant_id = $1 AND is_active = true',
       [merchant_id]
     );
     const endpoints = endpointsRes.rows;
 
-    // 3. Create Outbox Tasks for each active endpoint
     const outboxTasks = [];
     for (const endpoint of endpoints) {
       const outboxQuery = `

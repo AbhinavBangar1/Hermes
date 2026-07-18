@@ -43,7 +43,7 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
   const startTime = Date.now();
 
   try {
-    // 1. Fetch Event and Endpoint details with merchant configuration
+
     const query = `
       SELECT 
         e.payload, 
@@ -72,14 +72,14 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
       return;
     }
 
-    // 2. Check Circuit Breaker status
+
     const cbStatus = await getEndpointCircuitStatus(client, endpointId);
     if (cbStatus.circuit_breaker_state === 'OPEN') {
       console.warn(`[Worker] Fast-failing Event ${eventId} because Circuit Breaker is OPEN for Endpoint ${endpointId}`);
       throw new Error('CIRCUIT_BREAKER_OPEN');
     }
 
-    // 3. SSRF Prevention Check
+
     if (process.env.SSRF_PREVENTION_ENABLED === 'true') {
       try {
         await validateSSRF(url);
@@ -103,11 +103,11 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
       }
     }
 
-    // 4. Generate HMAC Signature header
+
     const timestamp = Math.floor(Date.now() / 1000);
     const signatureHeader = generateSignature(payload, webhook_secret, timestamp);
 
-    // 5. Fire HTTP POST
+
     console.log(`[Worker] Dispatching request to ${url}`);
     
     // Begin DB transaction to block concurrent updates while HTTP fires
@@ -134,7 +134,7 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
 
     const duration = Date.now() - startTime;
 
-    // 6. Evaluate HTTP outcome
+
     if (responseStatus && responseStatus >= 200 && responseStatus < 300) {
       // SUCCESS
       console.log(`[Worker] Delivery SUCCESS. Status: ${responseStatus} in ${duration}ms`);

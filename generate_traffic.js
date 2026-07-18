@@ -1,7 +1,7 @@
 async function run() {
   console.log('Generating traffic...');
   try {
-    // 1. Create a merchant
+
     const merchantRes = await fetch('http://localhost:3000/merchants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -10,7 +10,7 @@ async function run() {
     const merchant = await merchantRes.json();
     console.log('Merchant created:', merchant.id);
 
-    // 2. Create endpoints
+
     const endpoints = [
       'http://localhost:4000/webhooks/success',
       'http://localhost:4000/webhooks/fail/503', // Will retry 5 times and DLQ
@@ -29,7 +29,7 @@ async function run() {
       console.log('Endpoint created:', ep.id, url);
     }
 
-    // 3. Create a chaos endpoint
+
     const chaosUrl = `http://localhost:4000/webhooks/chaos/${endpointIds[0]}-chaos`;
     const chaosEpRes = await fetch('http://localhost:3000/endpoints', {
       method: 'POST',
@@ -46,7 +46,7 @@ async function run() {
         body: JSON.stringify({ endpoint_id: `${endpointIds[0]}-chaos`, fail_count: 3 })
     });
 
-    // 4. Fire events
+
     console.log('Firing events...');
     for (let i = 0; i < 50; i++) {
       await fetch('http://localhost:3000/events', {

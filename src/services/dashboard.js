@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, '../public')));
  */
 app.get('/api/metrics', async (req, res) => {
   try {
-    // 1. Success Rate
+
     const rateRes = await pool.query(`
       SELECT 
         COUNT(*) FILTER (WHERE status = 'delivered') * 100.0 / NULLIF(COUNT(*), 0) as success_rate,
@@ -33,7 +33,7 @@ app.get('/api/metrics', async (req, res) => {
     const successRate = parseFloat(rateRes.rows[0].success_rate || 0).toFixed(1);
     const totalEvents = parseInt(rateRes.rows[0].total_events || 0, 10);
 
-    // 2. Status Counts
+
     const statusRes = await pool.query(`
       SELECT status, COUNT(*) as count 
       FROM outbox_tasks 
@@ -44,7 +44,7 @@ app.get('/api/metrics', async (req, res) => {
       statusCounts[row.status] = parseInt(row.count, 10);
     });
 
-    // 3. P50 / P99 Latencies
+
     const latencyRes = await pool.query(`
       SELECT 
         percentile_cont(0.5) WITHIN GROUP (ORDER BY execution_duration_ms) as p50,
@@ -55,7 +55,7 @@ app.get('/api/metrics', async (req, res) => {
     const p50 = parseFloat(latencyRes.rows[0].p50 || 0).toFixed(0);
     const p99 = parseFloat(latencyRes.rows[0].p99 || 0).toFixed(0);
 
-    // 4. Retry Counts Distribution
+
     const retryRes = await pool.query(`
       SELECT attempts_count, COUNT(*) as count 
       FROM outbox_tasks 
@@ -67,7 +67,7 @@ app.get('/api/metrics', async (req, res) => {
       count: parseInt(row.count, 10)
     }));
 
-    // 5. Active Circuit Breakers
+
     const cbRes = await pool.query(`
       SELECT id, url, consecutive_failures, cooldown_until 
       FROM webhook_endpoints 
@@ -75,7 +75,7 @@ app.get('/api/metrics', async (req, res) => {
     `);
     const activeCircuitBreakers = cbRes.rows;
 
-    // 6. DLQ Events
+
     const dlqRes = await pool.query(`
       SELECT 
         e.id, 
