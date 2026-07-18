@@ -64,6 +64,9 @@ app.post('/events', async (req, res) => {
   }
 
   const client = await pool.connect();
+  const errorHandler = (err) => console.error(`[Producer] Client error:`, err.message);
+  client.on('error', errorHandler);
+
   try {
     await client.query('BEGIN');
 
@@ -105,6 +108,7 @@ app.post('/events', async (req, res) => {
     console.error('[Producer] Transaction rolled back. Failed to trigger event:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   } finally {
+    client.removeListener('error', errorHandler);
     client.release();
   }
 });

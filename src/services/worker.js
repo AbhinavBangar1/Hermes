@@ -36,6 +36,9 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
   console.log(`[Worker] Claimed message ${messageId} -> Event ${eventId} for endpoint ${endpointId} (Attempt #${attemptNumber})`);
 
   const client = await pool.connect();
+  const errorHandler = (err) => console.error(`[Worker] Client error for event ${eventId}:`, err.message);
+  client.on('error', errorHandler);
+
   let responseStatus = null;
   let responseHeaders = null;
   let responseBody = null;
@@ -217,6 +220,7 @@ async function processDelivery(messageId, eventId, endpointId, attemptNumber) {
     // Always acknowledge stream task, as we either queued a retry task or sent it to DLQ
     await redisClient.xAck(STREAM_NAME, GROUP_NAME, messageId);
   } finally {
+    client.removeListener('error', errorHandler);
     client.release();
   }
 }

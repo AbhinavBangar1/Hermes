@@ -13,6 +13,8 @@ const DELAY_KEY = process.env.REDIS_DELAY_KEY || 'webhook_delays';
  */
 async function pollOutbox() {
   const client = await pool.connect();
+  const errorHandler = (err) => console.error('[OutboxPublisher] Client error:', err.message);
+  client.on('error', errorHandler);
   try {
     await client.query('BEGIN');
 
@@ -50,6 +52,7 @@ async function pollOutbox() {
     await client.query('ROLLBACK');
     console.error('[OutboxPublisher] Error during outbox processing:', error);
   } finally {
+    client.removeListener('error', errorHandler);
     client.release();
   }
 }

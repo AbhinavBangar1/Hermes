@@ -123,6 +123,9 @@ app.get('/api/metrics', async (req, res) => {
 app.post('/api/redrive/:eventId', async (req, res) => {
   const { eventId } = req.params;
   const client = await pool.connect();
+  const errorHandler = (err) => console.error(`[DashboardAPI] Client error:`, err.message);
+  client.on('error', errorHandler);
+
   try {
     await client.query('BEGIN');
 
@@ -165,6 +168,7 @@ app.post('/api/redrive/:eventId', async (req, res) => {
     console.error('[DashboardAPI] Error redriving event:', error);
     res.status(500).json({ error: 'Failed to redrive event' });
   } finally {
+    client.removeListener('error', errorHandler);
     client.release();
   }
 });
